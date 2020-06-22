@@ -276,7 +276,7 @@ public class MqttTopic {
 
         while (filterPos < filterLen && topicPos < topicLen) {
             if (topicFilter.charAt(filterPos) == '#') {
-                topicPos = topicLen;    // topic/A/  topic/#
+                topicPos = topicLen;    // next 'if' will break topic/# and topic/A/ ,but thay are matcher  
                 filterPos = filterLen;
                 break;
             }
