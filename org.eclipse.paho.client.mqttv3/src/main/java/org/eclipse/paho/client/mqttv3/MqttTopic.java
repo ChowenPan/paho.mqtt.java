@@ -261,56 +261,57 @@ public class MqttTopic {
 	 * @throws IllegalArgumentException
 	 *             if the topic name or filter is invalid
 	 */
-	public static boolean isMatched(String topicFilter, String topicName) throws IllegalArgumentException {
-		int topicPos = 0;
-		int filterPos = 0;
-		int topicLen = topicName.length();
-		int filterLen = topicFilter.length();
+    public static boolean isMatched(String topicFilter, String topicName) throws IllegalArgumentException {
+        int topicPos = 0;
+        int filterPos = 0;
+        int topicLen = topicName.length();
+        int filterLen = topicFilter.length();
 
-		MqttTopic.validate(topicFilter, true);
-		MqttTopic.validate(topicName, false);
+        MqttTopic.validate(topicFilter, true);
+        MqttTopic.validate(topicName, false);
 
-		if (topicFilter.equals(topicName)) {
-			return true;
-		}
+        if (topicFilter.equals(topicName)) {
+            return true;
+        }
 
-		while (filterPos < filterLen && topicPos < topicLen) {
-                        if (topicFilter.charAt(filterPos) == '#')
-                                topicPos = topicLen - 1; // skip until end of string
+        while (filterPos < filterLen && topicPos < topicLen) {
+            if (topicFilter.charAt(filterPos) == '#') {
+                topicPos = topicLen;    // topic/A/  topic/#
+                filterPos = filterLen;
+                break;
+            }
 
-			if (topicName.charAt(topicPos) == '/' && topicFilter.charAt(filterPos) != '/')
+            if (topicName.charAt(topicPos) == '/' && topicFilter.charAt(filterPos) != '/')
 
-				break;
-			if (topicFilter.charAt(filterPos) != '+' && topicFilter.charAt(filterPos) != '#'
-					&& topicFilter.charAt(filterPos) != topicName.charAt(topicPos))
-				break;
-			if (topicFilter.charAt(filterPos) == '+') { // skip until we meet the next separator, or end of string
-				int nextpos = topicPos + 1;
-				while (nextpos < topicLen && topicName.charAt(nextpos) != '/')
-					nextpos = ++topicPos + 1;
-			}
+                break;
+            if (topicFilter.charAt(filterPos) != '+' && topicFilter.charAt(filterPos) != '#'
+                    && topicFilter.charAt(filterPos) != topicName.charAt(topicPos))
+                break;
+            if (topicFilter.charAt(filterPos) == '+') { // skip until we meet the next separator, or end of string
+                int nextpos = topicPos + 1;
+                while (nextpos < topicLen && topicName.charAt(nextpos) != '/')
+                    nextpos = ++topicPos + 1;
+            }
 
-			filterPos++;
-			topicPos++;
-		}
+            filterPos++;
+            topicPos++;
+        }
 
-		if ((topicPos == topicLen) && (filterPos == filterLen)) {
-			return true;
-		} else {
-			/*
-			 * https://github.com/eclipse/paho.mqtt.java/issues/418
-			 * Covers edge case to match sport/# to sport
-			 */
-			if ((topicFilter.length() - topicName.length()) == 2 &&
-					topicFilter.substring(topicFilter.length() -2, topicFilter.length()).equals("/#")) {
-				String filterSub = topicFilter.substring(0, topicFilter.length() - 2);
-				if (filterSub.equals(topicName)) {
-					System.err.println("filterSub equals topicName: " + filterSub + " == " + topicName);
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
+        if ((topicPos == topicLen) && (filterPos == filterLen)) {
+            return true;
+        } else {
+            /*
+             * https://github.com/eclipse/paho.mqtt.java/issues/418
+             * Covers edge case to match sport/# to sport
+             */
+            if ((topicFilter.length() - filterPos > 0) && (topicPos == topicLen)) {
+                if (topicName.charAt(topicPos - 1) == '/' && topicFilter.charAt(filterPos) == '#')
+                    return true;
+                if (topicFilter.length() - filterPos > 1 && topicFilter.substring(filterPos, filterPos + 2).equals("/#")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
